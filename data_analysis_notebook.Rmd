@@ -1,0 +1,32 @@
+---
+title: "data_analysis_EPA"
+output: html_document
+date: "2023-11-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(janitor)
+```
+
+```{r}
+foreclosures <- read_csv("Maryland_Notices_of_Intent_to_Foreclose.csv") |> 
+  clean_names() |> 
+  rename(february_2022 = february_2020)
+
+foreclosures
+
+#foreclosures_zip <- foreclosures |> 
+#mutate(total= july_2021 + august_2021 + september_2021 + october_2021 + november_2021 + december_2021 + january_2022 + february_2022 + march_2022 + april_2022 + may_2022 + june_2022 + july_2022 + august_2022 + september_2022 + october_)
+#  group_by(Zip) |> 
+ # summarise(total=sum()) |> 
+ # arrange(desc(count))
+
+#foreclosures_zip
+```
+
