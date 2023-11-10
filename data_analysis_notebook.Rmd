@@ -21,12 +21,23 @@ foreclosures <- read_csv("Maryland_Notices_of_Intent_to_Foreclose.csv") |>
 
 foreclosures
 
-#foreclosures_zip <- foreclosures |> 
-#mutate(total= july_2021 + august_2021 + september_2021 + october_2021 + november_2021 + december_2021 + january_2022 + february_2022 + march_2022 + april_2022 + may_2022 + june_2022 + july_2022 + august_2022 + september_2022 + october_)
-#  group_by(Zip) |> 
- # summarise(total=sum()) |> 
- # arrange(desc(count))
+foreclosures_sum <- foreclosures |>
+  group_by(zip) |>
+  summarise(foreclosures_sum = sum(across(contains("_")))) |>
+  arrange(desc(foreclosures_sum))
+foreclosures_sum
 
-#foreclosures_zip
+write_csv(foreclosures_sum, "foreclosure_sum.csv")
 ```
+1. From July '21- Oct'23 "the end of the pause on foreclosure notices", which zip code has had the most notices recorded?
+2. How has ^^this zip code^^ changed over the timespan?
+3. Using census data, what are the demographics of ^^this zip code^^?
+4. During the "holiday season" (Oct-Dec), how many foreclosures occur? And where?
+5. What are the differences in foreclosure noties by season (warm months vs cold months)?
+
+https://thedailyrecord.com/2023/06/16/md-baltimore-see-increase-in-foreclosure-rate/
+https://www.attomdata.com/news/market-trends/foreclosures/attom-july-2023-u-s-foreclosure-market-report/
+https://www.attomdata.com/news/market-trends/foreclosures/attom-mid-year-2023-u-s-foreclosure-market-report/
+https://patch.com/maryland/baltimore/baltimore-columbia-towson-md-has-one-highest-foreclosure-rates-country
+
 
