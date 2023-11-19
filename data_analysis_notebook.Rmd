@@ -42,7 +42,7 @@ Q1. From July '21- Oct'23 "the end of the pause on foreclosure notices", which z
 **This question is pretty much addressed above by adding the number of notices across the dataset, grouping the results by zip code, and arranging them in descending order.**
 
 Q2. How has this zip code changed over the timespan?
-**Since the dataset is already ordered chronologically, simply filtering for the zip code that had the most notices will gives us an idea of how many notices were given in that zip code month-by-month.**
+**Since the dataset is already ordered chronologically, simply filtering for the zip code that had the most notices will give us an idea of how many notices were given in that zip code month-by-month.**
 ```{r}
 foreclosures |> 
   filter(zip == 20772)
