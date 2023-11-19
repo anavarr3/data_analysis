@@ -40,3 +40,26 @@ write_csv(foreclosures_sum, "foreclosure_sum.csv")
 ```
 
 
+Q2 How has this zip code changed over the timespan?
+```{r}
+foreclosures |> 
+  filter(zip == 20772)
+```
+
+Q3. Join foreclosures_sum with census data (demographics) to answer
+
+Q4. Limitations: can only look at the data for 2021 and 2022 to compare the holiday season foreclosures since the 2023 data is not in yet
+```{r}
+twoyearforeclosures <- foreclosures |> 
+  select(ends_with("1", "2"))
+
+twoyearforeclosures
+```
+
+
+
+
+
+
+
+
