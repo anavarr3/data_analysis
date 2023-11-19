@@ -38,28 +38,34 @@ foreclosures_sum
 
 write_csv(foreclosures_sum, "foreclosure_sum.csv")
 ```
+Q1. From July '21- Oct'23 "the end of the pause on foreclosure notices", which zip code has had the most notices recorded?
+**This question is pretty much addressed above by adding the number of notices across the dataset, grouping the results by zip code, and arranging them in descending order.**
 
-
-Q2 How has this zip code changed over the timespan?
+Q2. How has this zip code changed over the timespan?
+**Since the dataset is already ordered chronologically, simply filtering for the zip code that had the most notices will gives us an idea of how many notices were given in that zip code month-by-month.**
 ```{r}
 foreclosures |> 
   filter(zip == 20772)
 ```
 
-Q3. Join foreclosures_sum with census data (demographics) to answer
+Q3. Using census data, what are the demographics of this zip code?
+**Once we join foreclosures_sum with census data (demographics), we can get a better idea of the population in 20772 and highlight the ones that stand out.**
 
-Q4. Limitations: can only look at the data for 2021 and 2022 to compare the holiday season foreclosures since the 2023 data is not in yet
+Q4. During the "holiday season" (Oct-Dec), how many foreclosures occur? And where?
+**Limitations: we can only look at the data for 2021 and 2022 to compare the holiday season foreclosures since the 2023 data is not in yet**
 ```{r}
+# Here we created a separate dataframe focusing on 2021 and 2022 so we could parse through the data that qualifies for this question
 twoyearforeclosures <- foreclosures |> 
-  select(ends_with("1", "2"))
-
+  group_by(zip) |>
+  select(ends_with("1")|ends_with("2"))
 twoyearforeclosures
 ```
-
-
-
-
-
-
-
-
+Q5. What are the differences in foreclosure notices by season (warm months vs cold months)?
+**We're concerned about our ability to filter by month since the dates are in the column position.**
+```{r}
+# Here we tried to transpose the data in hopes that it'll help with the filtering
+transpose_twoyearforeclosures <- as.data.frame(t(twoyearforeclosures))
+colnames(transpose_twoyearforeclosures) <- transpose_twoyearforeclosures[1, ]
+transpose_twoyearforeclosures <- transpose_twoyearforeclosures[-1, ]
+transpose_twoyearforeclosures
+```
