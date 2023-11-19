@@ -21,12 +21,12 @@ foreclosures <- read_csv("Maryland_Notices_of_Intent_to_Foreclose.csv") |>
   clean_names() |> 
   rename(february_2022 = february_2020)
 ```
+# Cleaning
+In cleaning the data, we recognized that there was an error in the original data so we contacted the creator of the data to confirm that February 2020 was supposed to be marked February 2022. We made sure to rename the column after reading in the data and using clean_names() to take the spaces out and make the column names uniform. There wasn’t any other obvious cleaning needed from what we can tell.
 ```{r}
 # Results of code: 
 foreclosures
 ```
-
-
 ```{r}
 # Here we wanted to try and make a quick map to see what we were looking at other than just a table of numbers.
 foreclosures_sum <- foreclosures |>
@@ -38,6 +38,8 @@ foreclosures_sum
 
 write_csv(foreclosures_sum, "foreclosure_sum.csv")
 ```
+We decided to go question by question to get a better understanding of the limitations present and explore some strategies to overcome those limitations and answer the questions that we posed.
+
 Q1. From July '21- Oct'23 "the end of the pause on foreclosure notices", which zip code has had the most notices recorded?
 **This question is pretty much addressed above by adding the number of notices across the dataset, grouping the results by zip code, and arranging them in descending order.**
 
