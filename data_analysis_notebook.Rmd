@@ -27,6 +27,11 @@ library(lubridate)
 # Dataset: Maryland Notices of Intent to Foreclose (July 2021 - Oct. 2023)
 
 ```{r}
+foreclosures
+```
+
+
+```{r}
 # Read in and clean the data
 foreclosures <- read_csv("Maryland_Notices_of_Intent_to_Foreclose.csv") |> 
   clean_names() |> 
@@ -80,6 +85,22 @@ top_foreclosure_zip <- transposed_redo |>
 
 top_foreclosure_zip
 ```
+
+```{r}
+##TEST DO NOT USE
+  long_transposed <- foreclosures |> 
+  pivot_longer(cols = -zip, names_to = "date", values_to = "value")
+
+wide_transposed <- long_transposed |> 
+  pivot_wider(names_from = date, values_from = value)
+  
+wide_transposed <- column_to_rownames(wide_transposed, var = "zip")
+
+  wide_transposed 
+
+```
+
+
 
 ```{r}
 # Time to chart it! We should also look at the percent change of other zip codes
