@@ -157,6 +157,20 @@ average_foreclosures_month <- sum_arranged |>
 average_foreclosures_month
 ```
 
+```{r}
+average_foreclosures_month |> 
+   ggplot() + 
+  geom_line(aes(x= month_year, y=sum_col)) +
+  scale_x_continuous(breaks = 1:52) +
+ labs(
+    title="Foreclosure notices rose drastically in this PG County zip code",
+    x = "month",
+    y = "total foreclosures notices issued",
+    caption = "Source: Office of Financial Regulation") +
+theme(
+    axis.text.x = element_text(angle = 45,  hjust=1)) 
+#   geom_text(check_overlap = TRUE, size = 2, aes(label = month_year), hjust = 0.5, vjust = -0.5)
+```
 
 
 #Q3
