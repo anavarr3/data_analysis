@@ -82,7 +82,7 @@ top_foreclosure_zip
 ```
 
 ```{r}
-# Time to chart it!
+# Time to chart it! We should also look at the percent change of other zip codes
 top_foreclosure_zip |> 
    ggplot() + 
   geom_line(aes(x= month_year, y=foreclosures)) +
