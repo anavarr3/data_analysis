@@ -1,7 +1,9 @@
 ---
-title: "data_analysis_EPA"
+title: "data_analysis_foreclosures"
 output: html_document
 date: "2023-11-10"
+data: https://opendata.maryland.gov/Housing/Maryland-Notices-of-Intent-to-Foreclose-by-Zip-Cod/ftsr-vapt
+
 ---
 
 ```{r setup, include=FALSE}
@@ -9,9 +11,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+#install.packages("zoo")
+```
+
+```{r}
 library(tidyverse)
 library(dplyr)
 library(janitor)
+library(zoo)
+library(ggplot2)
+library(tidycensus)
+library(lubridate)
+
 ```
 # Dataset: Maryland Notices of Intent to Foreclose (July 2021 - Oct. 2023)
 
@@ -23,10 +34,7 @@ foreclosures <- read_csv("Maryland_Notices_of_Intent_to_Foreclose.csv") |>
 ```
 # Cleaning
 In cleaning the data, we recognized that there was an error in the original data so we contacted the creator of the data to confirm that February 2020 was supposed to be marked February 2022. We made sure to rename the column after reading in the data and using clean_names() to take the spaces out and make the column names uniform. There wasn’t any other obvious cleaning needed from what we can tell.
-```{r}
-# Results of code: 
-foreclosures
-```
+
 ```{r}
 # Here we wanted to try and make a quick map to see what we were looking at other than just a table of numbers.
 foreclosures_sum <- foreclosures |>
@@ -40,34 +48,202 @@ write_csv(foreclosures_sum, "foreclosure_sum.csv")
 ```
 We decided to go question by question to get a better understanding of the limitations present and explore some strategies to overcome those limitations and answer the questions that we posed.
 
-Q1. From July '21- Oct'23 "the end of the pause on foreclosure notices", which zip code has had the most notices recorded?
-**This question is pretty much addressed above by adding the number of notices across the dataset, grouping the results by zip code, and arranging them in descending order.**
+# Q1
+From July '21- Oct'23 "the end of the pause on foreclosure notices", which zip code has had the most notices recorded?
+**This question is pretty much addressed above by adding the number of notices across the data set, grouping the results by zip code, and arranging them in descending order. The zip code 20772 in Prince George's County (including Upper Marlboro) had the highest number over the course of this timespan. See this map for a quick vizualizeation: https://datawrapper.dwcdn.net/M2Foe/1/**
 
-Q2. How has this zip code changed over the timespan?
-**Since the dataset is already ordered chronologically, simply filtering for the zip code that had the most notices will give us an idea of how many notices were given in that zip code month-by-month.**
+
 ```{r}
-foreclosures |> 
-  filter(zip == 20772)
+foreclosures_sum |> 
+  arrange(desc(foreclosures_sum))
 ```
 
-Q3. Using census data, what are the demographics of this zip code?
+
+
+
+
+#Q2 
+How has have foreclosure notices in this zip code changed over time?
+**Since the dataset is already ordered chronologically, simply filtering for the zip code that had the most notices will give us an idea of how many notices were given in that zip code month-by-month. We might need to contact the data set owner again to see if he has the pre-pandemic data.**
+```{r}
+# We transposed the data set to tackle this question. We had a lot of questions for ChatGPT https://chat.openai.com/share/a3d690f6-baec-4fc7-beb2-4844daf93de6 since there was an issue with getting R to recognize the first column as the first column.
+
+transposed_redo <- foreclosures |> 
+  gather(Date, Value, -1) |> 
+  spread(key = zip, value = Value) |> 
+  mutate(month_year = as.yearmon(paste(Date, "01", sep = "_"), format="%B_%Y_%d")) 
+
+top_foreclosure_zip <- transposed_redo |> 
+  rename(foreclosures = "20772") |> 
+  select(month_year, foreclosures) |> 
+  arrange(month_year)
+
+top_foreclosure_zip
+```
+
+```{r}
+# Time to chart it!
+top_foreclosure_zip |> 
+   ggplot() + 
+  geom_line(aes(x= month_year, y=foreclosures)) +
+  scale_x_continuous(breaks = 1:52) +
+ labs(
+    title="Foreclosure notices rose drastically in this PG County zip code",
+    x = "month",
+    y = "foreclosures notices issued",
+    caption = "Source: Office of Financial Regulation") +
+theme(
+    axis.text.x = element_text(angle = 45,  hjust=1)) 
+#   geom_text(check_overlap = TRUE, size = 2, aes(label = month_year), hjust = 0.5, vjust = -0.5)
+```
+
+```{r}
+# I want to compare the above chart to the overall pattern. Here I am just readjusting the transposed_redo data set so I can see the month_year column at the front and get rid of the original date column
+
+transposed_redo_arranged <- transposed_redo[, c(ncol(transposed_redo), 1:(ncol(transposed_redo)-1))] |> 
+  select(-Date)
+
+transposed_redo_arranged
+```
+
+
+```{r}
+#Okay, now that we've cleaned that up a bit, let's count the sum of the rows. This first part stores the dataframe inside a new dataframe without the first column so we can add a column (mutate) that is the sum of all the other columns without pulling the date into the calculation.
+
+col_sum <- transposed_redo_arranged |> 
+  mutate(sum_col = rowSums(transposed_redo_arranged[,-1]))
+
+#This next line creates a new dataframe, where we take our fresh one ^ and ask it to pull the new column from the end (sum_col) and place it at the front.
+
+sum_arranged <- col_sum[, c(ncol(transposed_redo), 1:(ncol(col_sum)-1))]
+
+sum_arranged
+```
+
+```{r}
+# Here I'm double checking that the first row is correct
+rowSums(transposed_redo_arranged[1,-1])
+```
+
+#Now let's get rid of the extra columns and make a column for the average number of foreclosure notices for each date. However, I have not weighted it for population/households per zip.
+
+```{r}
+average_foreclosures_month <- sum_arranged |> 
+  mutate(average = (sum_col/552)) |> 
+  select(month_year, sum_col, average) |> 
+  arrange(desc(average))
+
+average_foreclosures_month
+```
+
+
+
+#Q3
+Using census data, what are the demographics of this zip code?
 **Once we join foreclosures_sum with census data (demographics), we can get a better idea of the population in 20772 and highlight the ones that stand out.**
+
+```{r}
+
+ACS5 <- load_variables(2021, "acs5", cache = TRUE)
+view(ACS5)
+```
+
+#Honestly, this one I got stuck on. I was hoping for a column with each new demographic but I think I just confused it
+
+```{r}
+
+md <- get_acs(geography = "county",
+               variables = c(general_pop = "B02001_001E",
+                             white_alone = "B02001_002E",
+                             Black_or_AA = "B02001_003E"
+                             ),
+               state = "MD",
+               year = 2021)
+
+md
+```
 
 Q4. During the "holiday season" (Oct-Dec), how many foreclosures occur? And where?
 **Limitations: we can only look at the data for 2021 and 2022 to compare the holiday season foreclosures since the 2023 data is not in yet**
+
 ```{r}
-# Here we created a separate dataframe focusing on 2021 and 2022 so we could parse through the data that qualifies for this question
+# Here we created a separate dataframe focusing on 2021 and 2022 so we could parse through the data that qualifies for Question 4
 twoyearforeclosures <- foreclosures |> 
   group_by(zip) |>
   select(ends_with("1")|ends_with("2"))
+  
 twoyearforeclosures
 ```
-Q5. What are the differences in foreclosure notices by season (warm months vs cold months)?
+
+
+
+
+
+
+
+
+
+
+
+Q5. What are the differences in foreclosure notices by season (warm months vs cold months)? The only full year we have is 2022, so let's look at that year to start.
 **We're concerned about our ability to filter by month since the dates are in the column position.**
 ```{r}
-# Here we tried to transpose the data in hopes that it'll help with the filtering
-transpose_twoyearforeclosures <- as.data.frame(t(twoyearforeclosures))
-colnames(transpose_twoyearforeclosures) <- transpose_twoyearforeclosures[1, ]
-transpose_twoyearforeclosures <- transpose_twoyearforeclosures[-1, ]
-transpose_twoyearforeclosures
+#Here we are selecting only the 2022 months
+foreclosures_2022 <- foreclosures |> 
+  group_by(zip) |>
+  select(ends_with("2"))
+
+foreclosures_2022
+```
+
+```{r}
+#Here we are transposing that 2022 data set to make it easier to add everything
+transposed_foreclosures_2022 <- foreclosures_2022 |> 
+  gather(Date, Value, -1) |> 
+  spread(key = zip, value = Value) |> 
+  mutate(month_year = as.yearmon(paste(Date, "01", sep = "_"), format="%B_%Y_%d"))
+
+transposed_foreclosures_2022
+```
+
+
+```{r}
+# Now for the adding
+final_foreclosures_2022 <- transposed_foreclosures_2022[, c(ncol(transposed_foreclosures_2022), 1:(ncol(transposed_foreclosures_2022)-1))] |> 
+  select(-Date) |> 
+  arrange(month_year)
+
+final_foreclosures_2022
+```
+
+```{r}
+col_sum_2022_months <- final_foreclosures_2022 |> 
+  mutate(sum_of_notices = rowSums(final_foreclosures_2022[,-1]))
+
+foreclosures_by_month_2022 <- col_sum_2022_months[, c(ncol(transposed_foreclosures_2022), 1:(ncol(col_sum_2022_months)-1))] |>
+  select(month_year, sum_of_notices)
+
+foreclosures_by_month_2022
+```
+
+```{r}
+#Checking for the same number on the first row
+rowSums(foreclosures_by_month_2022[1,-1])
+```
+
+```{r}
+# Time to chart. I'm having trouble getting the ticks and month labels for this, and Chat GPT said it's because of the data type of the month_year column. We need to change that column to a date type using the first day of every month.
+
+foreclosures_by_month_2022 |> 
+   ggplot() + 
+  geom_line(aes(x= month_year, y=sum_of_notices)) +
+  scale_x_continuous(breaks = 1:52) +
+ labs(
+    title="Intent to foreclose notices in Maryland across 2022",
+    x = "month",
+    y = "intent to foreclose notices issued",
+    caption = "Source: Office of Financial Regulation") +
+theme(
+    axis.text.x = element_text(angle = 45,  hjust=1)) 
+
 ```
