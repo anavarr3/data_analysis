@@ -25,18 +25,17 @@ library(lubridate)
 
 ```
 # Dataset: Maryland Notices of Intent to Foreclose (July 2021 - Oct. 2023)
-
-```{r}
-foreclosures
-```
-
-
 ```{r}
 # Read in and clean the data
 foreclosures <- read_csv("Maryland_Notices_of_Intent_to_Foreclose.csv") |> 
   clean_names() |> 
   rename(february_2022 = february_2020)
 ```
+
+```{r}
+foreclosures
+```
+
 # Cleaning
 In cleaning the data, we recognized that there was an error in the original data so we contacted the creator of the data to confirm that February 2020 was supposed to be marked February 2022. We made sure to rename the column after reading in the data and using clean_names() to take the spaces out and make the column names uniform. There wasn’t any other obvious cleaning needed from what we can tell.
 
@@ -74,9 +73,16 @@ How has have foreclosure notices in this zip code changed over time?
 # We transposed the data set to tackle this question. We had a lot of questions for ChatGPT https://chat.openai.com/share/a3d690f6-baec-4fc7-beb2-4844daf93de6 since there was an issue with getting R to recognize the first column as the first column.
 
 transposed_redo <- foreclosures |> 
-  gather(Date, Value, -1) |> 
-  spread(key = zip, value = Value) |> 
-  mutate(month_year = as.yearmon(paste(Date, "01", sep = "_"), format="%B_%Y_%d")) 
+  gather(Date, Value, -1) |> spread(key = zip, value = Value) |> 
+  mutate(month_year = as.yearmon(paste(Date, "01", sep = "_"), format="%B_%Y_%d"))
+transposed_redo
+
+# Here we tried to format the dates using lubridate instead of the zoo package however we continue to run into the issue of getting a character column instead of a date
+transposed_redo_2 <- foreclosures |>
+  gather(date, value, -1) |>
+  spread(key = zip, value = value) |>
+  mutate(date= mdy(date), month_year = paste(month.abb[month(date)], year(date), sep = "_"))
+transposed_redo_2
 
 top_foreclosure_zip <- transposed_redo |> 
   rename(foreclosures = "20772") |> 
@@ -180,7 +186,7 @@ Using census data, what are the demographics of this zip code?
 ```{r}
 
 ACS5 <- load_variables(2021, "acs5", cache = TRUE)
-view(ACS5)
+ACS5
 ```
 
 #Honestly, this one I got stuck on. I was hoping for a column with each new demographic but I think I just confused it
