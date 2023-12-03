@@ -81,13 +81,16 @@ transposed_redo
 transposed_redo_2 <- foreclosures |>
   gather(date, value, -1) |>
   spread(key = zip, value = value) |>
-  mutate(date= mdy(date), month_year = paste(month.abb[month(date)], year(date), sep = "_"))
+  mutate(
+    date= mdy(date),
+    date = format(date, "%B_%Y"))
+    #month_year = paste(month.abb[month(date)], year(date), sep = "_"))
 transposed_redo_2
 
-top_foreclosure_zip <- transposed_redo |> 
+top_foreclosure_zip <- transposed_redo_2 |> 
   rename(foreclosures = "20772") |> 
-  select(month_year, foreclosures) |> 
-  arrange(month_year)
+  select(date, foreclosures) |> 
+  arrange(date)
 
 top_foreclosure_zip
 ```
@@ -193,15 +196,30 @@ ACS5
 
 ```{r}
 
-md <- get_acs(geography = "county",
-               variables = c(general_pop = "B02001_001E",
-                             white_alone = "B02001_002E",
-                             Black_or_AA = "B02001_003E"
-                             ),
-               state = "MD",
-               year = 2021)
+mdzip <- get_acs(geography="zcta", variables = "B02001_001", year=2021)
+mdzip <- mdzip |>
+      clean_names() |>
+      #separate(name, c('county', 'state'), sep=",") |>
+      rename(zip=geoid, population=estimate, moe_pop=moe) |>
+      group_by(zip) |>
+      arrange(desc(population))
+mdzip
 
-md
+foreclosure_state_pop <- left_join(foreclosures_sum, mdzip, join_by(zip))
+foreclosure_state_pop <- foreclosure_state_pop |> select(zip, foreclosures_sum, population, moe_pop)
+foreclosure_state_pop
+
+md_income <- get_acs(geography="zcta", variables = "B05010_001", year=2021)
+md_income <- md_income |>
+      clean_names() |>
+      rename(zip=geoid, income=estimate, moe_inc=moe) |>
+      group_by(zip) |>
+      arrange(desc(income))
+md_income
+
+foreclosure_pop_income <- left_join(foreclosure_state_pop, md_income, join_by(zip)) |> 
+  select(zip, foreclosures_sum, population, moe_pop, income, moe_inc)
+foreclosure_pop_income 
 ```
 
 Q4. During the "holiday season" (Oct-Dec), how many foreclosures occur? And where?
@@ -215,11 +233,27 @@ twoyearforeclosures <- foreclosures |>
   
 twoyearforeclosures
 ```
+# New Join Data
 
+```{r}
+pg_unemployment_rate <- read_csv("pg_unemployment_rate.csv") |>
+  clean_names() |> 
+  rename(pg_unemployment=mdprin5urn) |>
+  mutate(date = format(date, "%B_%Y"))
 
+multiple_years <- c(2021, 2022, 2023)
+pg_unemployment_rate <- pg_unemployment_rate |> 
+  filter(as.numeric(str_extract(date, "\\d{4}")) %in% multiple_years)
+pg_unemployment_rate
 
+pg_unemployment_notices <- left_join(pg_unemployment_rate, transposed_redo_2, join_by(date)) |> 
+  filter(date!="January_2021" & date!="February_2021" & date!="March_2021" & date!="April_2021" & date!="May_2021" & date!="June_2021") |> 
+  group_by(date, pg_unemployment) |> 
+  select("20607", "20608", "20613", "20623", "20703", "20704", "20705", "20706", "20707", "20708", "20710", "20712", "20715", "20716", "20717", "20718", "20719", "20720", "20721", "20722", "20725", "20735", "20737", "20740", "20741", "20742", "20743", "20744", "20745", "20746", "20747", "20748", "20750", "20757", "20762", "20769", "20770", "20771", "20781", "20782", "20783", "20784", "20785", "20787", "20788")
+pg_unemployment_notices
 
-
+# These are the PG county zip codes that didn't exist in the original data: "20731", "20790", "20791", "20799", "20753", "20749", "20768", "20709", "20726", "20738", "20797", "20697", "20752", "20775", "20792"
+```
 
 
 
