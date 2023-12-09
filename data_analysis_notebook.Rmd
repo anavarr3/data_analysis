@@ -62,7 +62,8 @@ foreclosures_sum |>
 How has have foreclosure notices in this zip code changed over time? How does this compare to the other zip codes?
 **Since the dataset is already ordered chronologically, simply filtering for the zip code that had the most notices will give us an idea of how many notices were given in that zip code month-by-month. We might need to contact the data set owner again to see if he has the pre-pandemic data.**
 
-#Findings so far: The numper of intent to foreclose notices went up across zip codes. We're trying to get the map up to show this. The question will probably focus on which zip codes saw a steeper incline. Maybe a percent difference column is needed?
+#Findings: The number of intent to foreclose notices dramatically rose in this zip code. (HOW DOES THIS COMPARE TO OTHER ZIP CODES)
+
 ```{r}
 # We transposed the data set to tackle this question. We had a lot of questions for ChatGPT https://chat.openai.com/share/a3d690f6-baec-4fc7-beb2-4844daf93de6 since there was an issue with getting R to recognize the first column as the first column.
 
@@ -99,7 +100,7 @@ write_csv(top_foreclosure_zip, "top_foreclosure_zip.csv")
 
 
 ```{r}
-# Time to chart it! We should also look at the percent change of other zip codes. NOTE: Getting an error on this one. Something with the date column. Error: Discrete value supplied to continuous scale.
+# Time to chart it! 
 
 top_foreclosure_zip |> 
    ggplot() + 
@@ -173,10 +174,10 @@ theme(
 
 
 #Q3
-Using census data, what are the demographics (income) of this zip code?
+Using census data, what are the demographics (income) of this zip code? How does this compare to other zip codes and their demographics?
 **Once we join foreclosures_sum with census data (demographics/income), we can get a better idea of the population in 20772 and highlight the ones that stand out.**
 
-#Findings so far: We have mostly focused on the joining for this portion since there was a lot to join and clean to make sure the data frames matched up.
+#Findings: We found that the zip codes with over 1,000 notices of intent to foreclose were typically the ones with a median income of $5,000 and above. The higher the income, the more varied the number of notices. The zip code 20772, which we chose since it had the highest sum of notices, was better off financially than a lot of the other zip codes. 
 
 ```{r}
 #Here we are using the zip from the census data to pull the population by zip. We then rename geoid, estimate and moe to zip, population and moe_pop
@@ -207,6 +208,55 @@ md_income
 foreclosure_pop_income <- left_join(foreclosure_state_pop, md_income, join_by(zip)) |> 
   select(zip, foreclosures_sum, population, moe_pop, income, moe_inc)
 foreclosure_pop_income 
+```
+
+```{r}
+per_capita <- foreclosure_pop_income |> 
+#  filter(population >= 20000) |> 
+  mutate(percapita = (foreclosures_sum/population)*10000) |> 
+  arrange(desc(per_capita))
+
+per_capita
+```
+
+```{r}
+ggplot(per_capita, aes(x=income, y=foreclosures_sum)) +
+  geom_point()+
+  labs(
+    title="Test",
+    x = "Median Income",
+    y = "foreclosure sum",
+    caption = "source: Maryland Department of the Environment, U.S. Census") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    geom_text(check_overlap = TRUE, size = 2, aes(label = zip), hjust = 0.5, vjust = -0.5)
+```
+
+```{r}
+ggplot(per_capita, aes(x=income, y=percapita)) +
+  geom_point()+
+  labs(
+    title="Test",
+    x = "income",
+    y = "foreclosures per capita",
+    caption = "source: Maryland Department of the Environment, U.S. Census") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    geom_text(check_overlap = TRUE, size = 2, aes(label = zip), hjust = 0.5, vjust = -0.5)
+```
+
+
+```{r}
+per_capita |>
+  ggplot() +
+  geom_point(aes(x=income,y=percapita)) +
+  geom_smooth(aes(x=income,y=percapita), method="lm")
+```
+
+
+**Answer** I see a small rundown of the data, a hypothesis, and an estimate of correlations
+```{r}
+
+cor.test(per_capita$income, per_capita$percapita)
+
 ```
 
 Q4. During the "holiday season" (Oct-Dec), how many foreclosures occur? And where?
