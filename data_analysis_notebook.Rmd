@@ -77,8 +77,10 @@ transposed_redo_2 <- foreclosures |>
   spread(key = zip, value = value) |>
   mutate(
     date= mdy(date),
-    date = format(date, "%B_%Y"))
-    #month_year = paste(month.abb[month(date)], year(date), sep = "_"))
+    date=floor_date(date, "month"),
+    #month_year = format(date, "%B_%Y")
+    ) #|>
+  #select(month_name, everything())
 transposed_redo_2
 
 
@@ -86,9 +88,6 @@ transposed_redo_2
 
 top_foreclosure_zip <- transposed_redo_2 |> 
   rename(foreclosures = "20772") |> 
-  mutate(
-    date= mdy(date),
-    date = format(date, "%B_%Y")) |> 
   select(date, foreclosures) |> 
   arrange(date)
 
@@ -104,8 +103,7 @@ write_csv(top_foreclosure_zip, "top_foreclosure_zip.csv")
 
 top_foreclosure_zip |> 
    ggplot() + 
-  geom_line(aes(x= date, y=foreclosures)) +
-  scale_x_continuous(breaks = 1:52) +
+  geom_line(aes(x=date, y=foreclosures)) +
  labs(
     title="Foreclosure notices rose drastically in this PG County zip code",
     x = "month",
