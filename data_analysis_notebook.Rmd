@@ -52,7 +52,7 @@ We decided to go question by question to get a better understanding of the limit
 From July '21- Oct'23 "the end of the pause on foreclosure notices", which zip code has had the most notices recorded?
 **This question is pretty much addressed above by adding the number of notices across the data set, grouping the results by zip code, and arranging them in descending order. The zip code 20772 in Prince George's County (including Upper Marlboro) had the highest number over the course of this timespan. See this map for a quick vizualizeation: https://datawrapper.dwcdn.net/M2Foe/1/**
 
-# Findings so far: We found that the zip code 20772 has the highest number of intent to foreclose notices, which is in PG County. We're currently trying to figure out how that compares to other zip codes. Transposing the data was the largest hurdle here and for the rest of the questions as we had to figure out how to format different aspects.
+# Findings: We found that the zip code 20772 has the highest number of intent to foreclose notices, which is in PG County. We're currently trying to figure out how that compares to other zip codes. Transposing the data was the largest hurdle here and for the rest of the questions as we had to figure out how to format different aspects.
 ```{r}
 foreclosures_sum |> 
   arrange(desc(foreclosures_sum))
@@ -86,10 +86,15 @@ transposed_redo_2
 
 top_foreclosure_zip <- transposed_redo_2 |> 
   rename(foreclosures = "20772") |> 
+  mutate(
+    date= mdy(date),
+    date = format(date, "%B_%Y")) |> 
   select(date, foreclosures) |> 
   arrange(date)
 
 top_foreclosure_zip
+
+write_csv(top_foreclosure_zip, "top_foreclosure_zip.csv")
 
 ```
 
