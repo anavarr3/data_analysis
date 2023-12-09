@@ -62,7 +62,7 @@ foreclosures_sum |>
 How has have foreclosure notices in this zip code changed over time? How does this compare to the other zip codes?
 **Since the dataset is already ordered chronologically, simply filtering for the zip code that had the most notices will give us an idea of how many notices were given in that zip code month-by-month. We might need to contact the data set owner again to see if he has the pre-pandemic data.**
 
-#Findings: The number of intent to foreclose notices dramatically rose in this zip code. (HOW DOES THIS COMPARE TO OTHER ZIP CODES)
+#Findings: The number of intent to foreclose notices dramatically rose in this zip code. We decided to compare it to a zip code with a simarl amount of NOI and a similar median income (21206) as well as a few other zip codes from different median incomes and then charted the number of foreclosure notices over time. We saw that across the zip codes, there were consistent peaks in April 2022, Aug. 2022 and May 2023. In Aug. 2023, our chosen zip code (20772) and the other similar zip code (21206) peaked while the others slightly rose or fell.
 
 ```{r}
 # We transposed the data set to tackle this question. We had a lot of questions for ChatGPT https://chat.openai.com/share/a3d690f6-baec-4fc7-beb2-4844daf93de6 since there was an issue with getting R to recognize the first column as the first column.
@@ -80,7 +80,8 @@ transposed_redo_2 <- foreclosures |>
     date= mdy(date),
     date=floor_date(date, "month"),
     #month_year = format(date, "%B_%Y")
-    ) #|>
+    ) |>
+  arrange(date)
   #select(month_name, everything())
 transposed_redo_2
 
@@ -95,7 +96,16 @@ top_foreclosure_zip <- transposed_redo_2 |>
 top_foreclosure_zip
 
 write_csv(top_foreclosure_zip, "top_foreclosure_zip.csv")
+```
 
+
+```{r}
+foreclosures_zip <- transposed_redo_2 |>
+select(date, "20772", "20878", "21122", "20640", "20895", "21206")  |>
+arrange(date)
+foreclosures_zip
+
+write_csv(foreclosures_zip, "foreclosures_zip.csv")
 ```
 
 
@@ -214,7 +224,7 @@ foreclosure_pop_income
 per_capita <- foreclosure_pop_income |> 
 #  filter(population >= 20000) |> 
   mutate(percapita = (foreclosures_sum/population)*10000) |> 
-  arrange(desc(per_capita))
+  arrange(desc(percapita))
 
 per_capita
 ```
@@ -283,8 +293,8 @@ twoyearforeclosures
 #Cleaning
 pg_unemployment_rate <- read_csv("pg_unemployment_rate.csv") |>
   clean_names() |> 
-  rename(pg_unemployment=mdprin5urn) |>
-  mutate(date = format(date, "%B_%Y"))
+  rename(pg_unemployment=mdprin5urn)
+pg_unemployment_rate
 
 #Here we are trying to isolate just the years 2021, 2022 and 2023
 multiple_years <- c(2021, 2022, 2023)
@@ -294,11 +304,13 @@ pg_unemployment_rate
 
 #We got "NA" for some rows before we realized the original data didn't include those months, so we took them out.
 pg_unemployment_notices <- left_join(pg_unemployment_rate, transposed_redo_2, join_by(date)) |> 
-  filter(date!="January_2021" & date!="February_2021" & date!="March_2021" & date!="April_2021" & date!="May_2021" & date!="June_2021") |> 
+  filter(date!="2021-01-01" & date!="2021-02-01" & date!="2021-03-01" & date!="2021-04-01" & date!="2021-05-01" & date!="2021-05-01") |> 
   group_by(date, pg_unemployment) |> 
   select("20607", "20608", "20613", "20623", "20703", "20704", "20705", "20706", "20707", "20708", "20710", "20712", "20715", "20716", "20717", "20718", "20719", "20720", "20721", "20722", "20725", "20735", "20737", "20740", "20741", "20742", "20743", "20744", "20745", "20746", "20747", "20748", "20750", "20757", "20762", "20769", "20770", "20771", "20781", "20782", "20783", "20784", "20785", "20787", "20788")
-pg_unemployment_notices
 
+pg_unemployment_notices <- pg_unemployment_notices |>
+  mutate(pg_notices = rowSums(pg_unemployment_notices[, -(1:2)]))
+pg_unemployment_notices
 # These are the PG county zip codes that didn't exist in the original data: "20731", "20790", "20791", "20799", "20753", "20749", "20768", "20709", "20726", "20738", "20797", "20697", "20752", "20775", "20792"
 ```
 
