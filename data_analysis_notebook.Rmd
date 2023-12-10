@@ -64,13 +64,12 @@ How has have foreclosure notices in this zip code changed over time? How does th
 
 #Findings: The number of intent to foreclose notices dramatically rose in this zip code. We decided to compare it to a zip code with a simarl amount of NOI and a similar median income (21206) as well as a few other zip codes from different median incomes and then charted the number of foreclosure notices over time. We saw that across the zip codes, there were consistent peaks in April 2022, Aug. 2022 and May 2023. In Aug. 2023, our chosen zip code (20772) and the other similar zip code (21206) peaked while the others slightly rose or fell.
 
+#As for the overall aspect, the zip code 20772 had a percent change of 681.25%. That's a lot, but nowhere near the top in terms of which zip code had the highest percent change. When we filtered for only zip codes in Prince George's County, it has the 11th highest percent change out of 27 of PG counties with a calculated percent change. We actually found that there was one zip code, 20712, that saw a negative percent change -- it went from two notices in July 2021 to one notice in Oct. 2023. However, there were some years in between where it had higher amounts. One month it had a total of eight notices. This also doesn't take into account the zip codes with lower population compared to more populated zip codes. 
+
+#The zip code with the highest percent change -- 20746 -- jumped from 1 foreclosure notice to 40 by October 2023. In comparison, 20772 jumped from 16 notices to 125.
+
 ```{r}
 # We transposed the data set to tackle this question. We had a lot of questions for ChatGPT https://chat.openai.com/share/a3d690f6-baec-4fc7-beb2-4844daf93de6 since there was an issue with getting R to recognize the first column as the first column.
-
-transposed_redo <- foreclosures |> 
-  gather(Date, Value, -1) |> spread(key = zip, value = Value) |> 
-  mutate(month_year = as.yearmon(paste(Date, "01", sep = "_"), format="%B_%Y_%d"))
-transposed_redo
 
 # Here we made another attempt at transposing to format the dates using lubridate instead of the zoo package. However we continued to run into the issue of getting a character column instead of a date. We were, however, able to solve our issue with the date column being in a weird month_year format by using the format function.
 transposed_redo_2 <- foreclosures |>
@@ -78,16 +77,14 @@ transposed_redo_2 <- foreclosures |>
   spread(key = zip, value = value) |>
   mutate(
     date= mdy(date),
-    date=floor_date(date, "month"),
+    date=floor_date(date, "month")
     #month_year = format(date, "%B_%Y")
     ) |>
   arrange(date)
   #select(month_name, everything())
 transposed_redo_2
 
-
 #Now we're just cleaning a few things up. This dataframe is specific to the zip code 20772 for each month of the year from July 2021 to October 2023, so we just renamed the 20772 column "foreclosures" and kept the date and foreclosures columns before arranging by date. Because the date column is a character rather than an actual date, it's arranged in alphabetical order. We can work with that for now and separate them if we join later. 
-
 top_foreclosure_zip <- transposed_redo_2 |> 
   rename(foreclosures = "20772") |> 
   select(date, foreclosures) |> 
@@ -98,8 +95,8 @@ top_foreclosure_zip
 write_csv(top_foreclosure_zip, "top_foreclosure_zip.csv")
 ```
 
-
 ```{r}
+#Here we decided to compare the 20772 zip code to a few others based on where they fell with median income levels and foreclosure numbers (see datawrapper chart for details).
 foreclosures_zip <- transposed_redo_2 |>
 select(date, "20772", "20878", "21122", "20640", "20895", "21206")  |>
 arrange(date)
@@ -112,6 +109,8 @@ write_csv(foreclosures_zip, "foreclosures_zip.csv")
 ```{r}
 # Time to chart it! 
 
+#datawrapper: https://datawrapper.dwcdn.net/g8fID/1/
+
 top_foreclosure_zip |> 
    ggplot() + 
   geom_line(aes(x=date, y=foreclosures)) +
@@ -123,6 +122,16 @@ top_foreclosure_zip |>
 theme(
     axis.text.x = element_text(angle = 45,  hjust=1)) 
  #  geom_text(check_overlap = TRUE, size = 2, aes(label = date), hjust = 0.5, vjust = -0.5)
+```
+
+
+```{r}
+foreclosures_zip_all <- transposed_redo_2 |>
+arrange(date)
+
+foreclosures_zip_all
+
+write_csv(foreclosures_zip_all, "foreclosures_zip_all.csv")
 ```
 
 ```{r}
@@ -154,43 +163,40 @@ sum_arranged
 rowSums(transposed_redo_arranged[1,-1])
 ```
 
-#Now let's get rid of the extra columns and make a column for the average number of foreclosure notices for each date. However, I have not weighted it for population/households per zip.
-
 ```{r}
-#NOTE: Double check that this is correct as far as the average goes. As for the code, sum_arranged currently doesn't have a date column. Find a way to add that back in. col_bind?
-average_foreclosures_month <- sum_arranged |> 
-  mutate(average = (sum_col/552)) |> 
-  select(date, sum_col, average) |> 
-  arrange(desc(average))
+#I want to look at the percent change of notices from July 2021 and October 2023 since the moratorium on residential foreclosures in Maryland expired June 30, 2021 and foreclosures resumed July 1, 2021. This is for all the zip codes in Maryland. Farther down, we'll compare just PG County zip codes.
 
-average_foreclosures_month
+perc_change_foreclosures <- foreclosures |> 
+  mutate(perc_change = ifelse(july_2021 != 0, (october_2023 - july_2021) / july_2021 * 100, NA)) |> 
+  select(zip, perc_change) |> 
+  arrange(desc(perc_change))
+
+perc_change_foreclosures
+
+write_csv(perc_change_foreclosures, "perc_change_foreclosures.csv")
 ```
 
 ```{r}
-#NOTE: This won't work until the above is fixed.
-average_foreclosures_month |> 
-   ggplot() + 
-  geom_line(aes(x= month_year, y=sum_col)) +
-  scale_x_continuous(breaks = 1:52) +
- labs(
-    title="Foreclosure notices rose drastically in this PG County zip code",
-    x = "month",
-    y = "total foreclosures notices issued",
-    caption = "Source: Office of Financial Regulation") +
-theme(
-    axis.text.x = element_text(angle = 45,  hjust=1)) 
-#   geom_text(check_overlap = TRUE, size = 2, aes(label = month_year), hjust = 0.5, vjust = -0.5)
-```
+perc_change_pg_foreclosures <- foreclosures |> 
+filter(zip %in% c ("20772", "20607", "20608", "20613", "20623", "20703", "20704", "20705", "20706", "20707", "20708", "20710", "20712", "20715", "20716", "20717", "20718", "20719", "20720", "20721", "20722", "20725", "20735", "20737", "20740", "20741", "20742", "20743", "20744", "20745", "20746", "20747", "20748", "20750", "20757", "20762", "20769", "20770", "20771", "20781", "20782", "20783", "20784", "20785", "20787", "20788")) |> 
+  mutate(perc_change = ifelse(july_2021 != 0, (october_2023 - july_2021) / july_2021 * 100, NA)) |> 
+  select(zip, perc_change) |> 
+  arrange(desc(perc_change))
 
+perc_change_pg_foreclosures
+```
 
 #Q3
-Using census data, what are the demographics (income) of this zip code? How does this compare to other zip codes and their demographics?
-**Once we join foreclosures_sum with census data (demographics/income), we can get a better idea of the population in 20772 and highlight the ones that stand out.**
+Using census data, what are the demographics (income) of this zip code? How does this compare to other zip codes and their demographics? Is there a relationship between a zip code's median income and the number of foreclosures per capita?
 
-#Findings: We found that the zip codes with over 1,000 notices of intent to foreclose were typically the ones with a median income of $5,000 and above. The higher the income, the more varied the number of notices. The zip code 20772, which we chose since it had the highest sum of notices, was better off financially than a lot of the other zip codes. 
+#Findings: There very weak relationship between median income and notices per capita -- however, there is noticeably more variation in foreclosure notice rates in poorer zip codes compared to wealthier zip codes. The zip code 20772 falls around the middle of the median income range, yet has had the highest number of foreclosures compared to other zip codes. When we mapped out these zip codes, we found that zip codes near the border of Charles and PG County had a large cluster of zip codes with a high rate of foreclosure notices per capita. There were also some noticeable zip codes in Dorchester and Wicomico counties.
 
 ```{r}
 #Here we are using the zip from the census data to pull the population by zip. We then rename geoid, estimate and moe to zip, population and moe_pop
+
+acs5_variables <- load_variables(2021, "acs5", cache = TRUE)
+acs5_variables
+
 mdzip <- get_acs(geography="zcta", variables = "B02001_001", year=2021)
 mdzip <- mdzip |>
       clean_names() |>
@@ -205,9 +211,9 @@ foreclosure_state_pop <- left_join(foreclosures_sum, mdzip, join_by(zip))
 foreclosure_state_pop <- foreclosure_state_pop |> select(zip, foreclosures_sum, population, moe_pop)
 foreclosure_state_pop
 
-
 #Here we're pulling the income from the census
-md_income <- get_acs(geography="zcta", variables = "B05010_001", year=2021)
+md_income <- get_acs(geography="zcta", variables = "B19013_001", year=2021)
+
 md_income <- md_income |>
       clean_names() |>
       rename(zip=geoid, income=estimate, moe_inc=moe) |>
@@ -221,38 +227,66 @@ foreclosure_pop_income
 ```
 
 ```{r}
+#Now we are making a dataframe that includes a per_capita column.
 per_capita <- foreclosure_pop_income |> 
-#  filter(population >= 20000) |> 
   mutate(percapita = (foreclosures_sum/population)*10000) |> 
   arrange(desc(percapita))
 
 per_capita
+
+write_csv(per_capita, "per_capita.csv")
 ```
 
 ```{r}
+#We wanted to first plot out the sum of intent to foreclose notices by zip code.
 ggplot(per_capita, aes(x=income, y=foreclosures_sum)) +
   geom_point()+
   labs(
     title="Test",
     x = "Median Income",
     y = "foreclosure sum",
-    caption = "source: Maryland Department of the Environment, U.S. Census") +
+    caption = "source: Source: Office of Financial Regulation") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     geom_text(check_overlap = TRUE, size = 2, aes(label = zip), hjust = 0.5, vjust = -0.5)
 ```
 
 ```{r}
+#How spread out is our data? It looks like the zip codes lean under 150,000, which is why we decided to use the Kendall method for the correlation test. 
+
+ggplot(per_capita, aes(x = income)) +
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
+  labs(title = "distribution of median income",
+       x = "median income",
+       y = "frequency")
+```
+
+```{r}
+#Here we are charting the relationship between a zip code's median income and the number of intent to foreclose notices.
+per_capita |>
+  ggplot() +
+  geom_point(aes(x=income,y=foreclosures_sum)) +
+  geom_smooth(aes(x=income,y=foreclosures_sum), method="lm")
+```
+
+```{r}
+# The Kendall Method shows that there isn't a strong relationship between these two.
+cor.test(per_capita$income, per_capita$foreclosures_sum, method = "kendall")
+
+```
+
+```{r}
+#Okay, now to plot the median income and the number of intent to foreclose notices by zip code.
+
 ggplot(per_capita, aes(x=income, y=percapita)) +
   geom_point()+
   labs(
     title="Test",
     x = "income",
     y = "foreclosures per capita",
-    caption = "source: Maryland Department of the Environment, U.S. Census") +
+    caption = "source: Source: Office of Financial Regulation") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     geom_text(check_overlap = TRUE, size = 2, aes(label = zip), hjust = 0.5, vjust = -0.5)
 ```
-
 
 ```{r}
 per_capita |>
@@ -261,30 +295,17 @@ per_capita |>
   geom_smooth(aes(x=income,y=percapita), method="lm")
 ```
 
-
-**Answer** I see a small rundown of the data, a hypothesis, and an estimate of correlations
 ```{r}
+#There very weak relationship between median income and notices per capita -- however, there is noticeably more variation in foreclosure notice rates in poorer zip codes compared to wealthier zip codes.
 
-cor.test(per_capita$income, per_capita$percapita)
+cor.test(per_capita$income, per_capita$percapita, method = "kendall")
 
 ```
 
-Q4. During the "holiday season" (Oct-Dec), how many foreclosures occur? And where?
-**Limitations: we can only look at the data for 2021 and 2022 to compare the holiday season foreclosures since the 2023 data is not in yet**
+Q4. How do the unemployment rates across PG County compare to the intent to foreclose notices for each month? 
 
-NEW QUESTION: How do the unemployment rates across PG County compare to the intent to foreclose notices for each month?
+#Findings: It seems like there is no relationship. As unemployment rates decrease following July 2021,intent to foreclose notices continue to rise. 
 
-#Findings so far: Again, we focused mostly on joining the dataframes here. We did find that there are some PG Counties that we don't have data for in the original data frame, however. That could pose a problem. For now, we left them out of the equation.
-
-```{r}
-#This is from the holiday question
-# Here we created a separate dataframe focusing on 2021 and 2022 so we could parse through the data that qualifies for Question 4
-twoyearforeclosures <- foreclosures |> 
-  group_by(zip) |>
-  select(ends_with("1")|ends_with("2"))
-  
-twoyearforeclosures
-```
 # New Join Data
 
 ```{r}
@@ -304,14 +325,26 @@ pg_unemployment_rate
 
 #We got "NA" for some rows before we realized the original data didn't include those months, so we took them out.
 pg_unemployment_notices <- left_join(pg_unemployment_rate, transposed_redo_2, join_by(date)) |> 
-  filter(date!="2021-01-01" & date!="2021-02-01" & date!="2021-03-01" & date!="2021-04-01" & date!="2021-05-01") |> 
+  filter(date!="2021-01-01" & date!="2021-02-01" & date!="2021-03-01" & date!="2021-04-01" & date!="2021-05-01"& date!="2021-06-01") |> 
   group_by(date, pg_unemployment) |>
-  summarize(across(c("20607", "20608", "20613", "20623", "20703", "20704", "20705", "20706", "20707", "20708", "20710", "20712", "20715", "20716", "20717", "20718", "20719", "20720", "20721", "20722", "20725", "20735", "20737", "20740", "20741", "20742", "20743", "20744", "20745", "20746", "20747", "20748", "20750", "20757", "20762", "20769", "20770", "20771", "20781", "20782", "20783", "20784", "20785", "20787", "20788"), sum)) |>
-  mutate(pg_notices = rowSums(across(c("20607", "20608", "20613", "20623", "20703", "20704", "20705", "20706", "20707", "20708", "20710", "20712", "20715", "20716", "20717", "20718", "20719", "20720", "20721", "20722", "20725", "20735", "20737", "20740", "20741", "20742", "20743", "20744", "20745", "20746", "20747", "20748", "20750", "20757", "20762", "20769", "20770", "20771", "20781", "20782", "20783", "20784", "20785", "20787", "20788")))) |> 
+  summarize(across(c("20607", "20608", "20613", "20623", "20703", "20704", "20705", "20706", "20707", "20708", "20710", "20712", "20715", "20716", "20717", "20718", "20719", "20720", "20721", "20722", "20725", "20735", "20737", "20740", "20741", "20742", "20743", "20744", "20745", "20746", "20747", "20748", "20750", "20757", "20762", "20769", "20770", "20771", "20781", "20782", "20783", "20784", "20785", "20787", "20788", "20772"), sum)) |>
+  mutate(pg_notices = rowSums(across(c("20607", "20608", "20613", "20623", "20703", "20704", "20705", "20706", "20707", "20708", "20710", "20712", "20715", "20716", "20717", "20718", "20719", "20720", "20721", "20722", "20725", "20735", "20737", "20740", "20741", "20742", "20743", "20744", "20745", "20746", "20747", "20748", "20750", "20757", "20762", "20769", "20770", "20771", "20781", "20782", "20783", "20784", "20785", "20787", "20788", "20772")))) |> 
   select(date, pg_unemployment, pg_notices)
 pg_unemployment_notices
 
 # These are the PG county zip codes that didn't exist in the original data: "20731", "20790", "20791", "20799", "20753", "20749", "20768", "20709", "20726", "20738", "20797", "20697", "20752", "20775", "20792"
+
+write_csv(pg_unemployment_notices, "pg_unemployment_notices.csv")
+
+
+```
+
+```{r}
+perc_change_pg_unemployment_notices <- pg_unemployment_notices |>
+ arrange(date)
+
+
+perc_change_pg_unemployment_notices
 ```
 
 Q5. What are the differences in foreclosure notices by season (warm months vs cold months)? The only full year we have is 2022, so let's look at that year to start.
@@ -319,41 +352,73 @@ Q5. What are the differences in foreclosure notices by season (warm months vs co
 
 #Findings so far: Again, having trouble getting the months to show up at the bottom of the chart, but we found there is an incline over the span of the year -- meaning there were more notices in the colder months. However, there was a pretty big spike in the spring (it looks like the spring) before the notices dropped again. I would be interested in finding out more about that.
 
+
+```{r}
+transposed_redo_2 <- foreclosures |>
+  gather(date, value, -1) |>
+  spread(key = zip, value = value) |>
+  mutate(
+    date= mdy(date),
+    date=floor_date(date, "month")
+    #month_year = format(date, "%B_%Y")
+    ) |>
+  arrange(date)
+  #select(month_name, everything())
+transposed_redo_2
+```
+
+
 ```{r}
 #Here we are selecting only the 2022 months
-foreclosures_2022 <- foreclosures |> 
-  group_by(zip) |>
-  select(ends_with("2"))
+foreclosure_notices_2022 <- transposed_redo_2 |> 
+  mutate(year = (year(date))) |> 
+  filter(year == "2022") |> 
+  select(!year)
 
-foreclosures_2022
+foreclosure_notices_2022
 ```
+
 
 ```{r}
-#Here we are transposing that 2022 data set to make it easier to add everything
-transposed_foreclosures_2022 <- foreclosures_2022 |> 
-  gather(Date, Value, -1) |> 
-  spread(key = zip, value = Value) |> 
-  mutate(month_year = as.yearmon(paste(Date, "01", sep = "_"), format="%B_%Y_%d"))
+col_sum <- transposed_redo_arranged |> 
+  mutate(sum_col = rowSums(transposed_redo_arranged[,-1]))
 
-transposed_foreclosures_2022
+#This next line creates a new dataframe, where we take our fresh one ^ and ask it to pull the new column from the end (sum_col) and place it at the front.
+
+sum_arranged <- col_sum[, c(ncol(transposed_redo_2), 1:(ncol(col_sum)-1))]
+
+sum_arranged
 ```
+
+#This next line creates a new dataframe, where we take our fresh one ^ and ask it to pull the new column from the end (sum_col) and place it at the front.
+
+sum_arranged <- col_sum[, c(ncol(transposed_redo_2), 1:(ncol(col_sum)-1))]
+
+sum_arranged
+
+
+
+
 
 
 ```{r}
 # Now for the adding
-final_foreclosures_2022 <- transposed_foreclosures_2022[, c(ncol(transposed_foreclosures_2022), 1:(ncol(transposed_foreclosures_2022)-1))] |> 
-  select(-Date) |> 
-  arrange(month_year)
+final_foreclosures_2022 <- foreclosure_notices_2022[, c(ncol(foreclosure_notices_2022), 1:(ncol(foreclosure_notices_2022)-1))] |> 
+  arrange(date)
 
 final_foreclosures_2022
 ```
+
+
+
+
 
 ```{r}
 col_sum_2022_months <- final_foreclosures_2022 |> 
   mutate(sum_of_notices = rowSums(final_foreclosures_2022[,-1]))
 
 foreclosures_by_month_2022 <- col_sum_2022_months[, c(ncol(transposed_foreclosures_2022), 1:(ncol(col_sum_2022_months)-1))] |>
-  select(month_year, sum_of_notices)
+  select(date, sum_of_notices)
 
 foreclosures_by_month_2022
 ```
@@ -367,7 +432,7 @@ rowSums(foreclosures_by_month_2022[1,-1])
 # Time to chart. I'm having trouble getting the ticks and month labels for this, and Chat GPT said it's because of the data type of the month_year column. We need to change that column to a date type using the first day of every month.
 
 foreclosures_by_month_2022 |> 
-   ggplot() + 
+  ggplot() + 
   geom_line(aes(x= month_year, y=sum_of_notices)) +
   scale_x_continuous(breaks = 1:52) +
  labs(
