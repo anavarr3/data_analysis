@@ -411,7 +411,7 @@ foreclosure_notices_2022
 
 foreclosure_notices_2022 |> 
   ggplot() + 
-  geom_line(aes(x= full_date, y=sum_col)) +
+  geom_line(aes(x= date, y=sum_col)) +
   scale_x_continuous(breaks = 1:52) +
  labs(
     title="Intent to foreclose notices in Maryland across 2022",
