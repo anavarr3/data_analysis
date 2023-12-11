@@ -367,17 +367,14 @@ Q5. What are the differences in foreclosure notices by season (warm months vs co
 #Findings so far: Again, having trouble getting the months to show up at the bottom of the chart, but we found there is an incline over the span of the year -- meaning there were more notices in the colder months. However, there was a pretty big spike in the spring (it looks like the spring) before the notices dropped again. I would be interested in finding out more about that.
 
 
-```{r}
-#Here we are selecting only the 2022 months
-foreclosure_notices_2022 <- transposed_redo_2 |> 
-  mutate(year = (year(date))) |> 
-  filter(year == "2022") |> 
-  select(!year)
-
-foreclosure_notices_2022
-```
 
 
+
+
+
+
+
+#Can throw away if we can figure out how to add a sum column above
 ```{r}
 col_sum <- transposed_redo_arranged |> 
   mutate(sum_col = rowSums(transposed_redo_arranged[,-1])) |>
@@ -388,6 +385,25 @@ col_sum
 sum_arranged <- col_sum[, c(ncol(transposed_redo_2), 1:(ncol(col_sum)-1))]
 
 sum_arranged
+```
+```{r}
+foreclosures_2022_date <- sum_arranged |> 
+  clean_names() |> 
+  mutate(date = foreclosures_zip_all$date) |> 
+  select(date, everything())
+
+foreclosures_2022_date
+```
+
+
+```{r}
+#Here we are selecting only the 2022 months
+foreclosure_notices_2022 <- transposed_redo_2 |> 
+  mutate(year = (year(date))) |> 
+  filter(year == "2022") |> 
+  select(!year)
+
+foreclosure_notices_2022
 ```
 
 ```{r}
