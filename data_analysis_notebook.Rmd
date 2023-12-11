@@ -166,6 +166,8 @@ rowSums(transposed_redo_arranged[1,-1])
 ```{r}
 #I want to look at the percent change of notices from July 2021 and October 2023 since the moratorium on residential foreclosures in Maryland expired June 30, 2021 and foreclosures resumed July 1, 2021. This is for all the zip codes in Maryland. Farther down, we'll compare just PG County zip codes.
 
+# Here is the datawrapper map: https://datawrapper.dwcdn.net/mkGLb/2/
+
 perc_change_foreclosures <- foreclosures |> 
   mutate(perc_change = ifelse(july_2021 != 0, (october_2023 - july_2021) / july_2021 * 100, NA)) |> 
   select(zip, perc_change) |> 
@@ -177,6 +179,9 @@ write_csv(perc_change_foreclosures, "perc_change_foreclosures.csv")
 ```
 
 ```{r}
+#Now for PG County
+#Here is the Datawrapper map: https://datawrapper.dwcdn.net/Ujoax/1/
+
 perc_change_pg_foreclosures <- foreclosures |> 
 filter(zip %in% c ("20772", "20607", "20608", "20613", "20623", "20703", "20704", "20705", "20706", "20707", "20708", "20710", "20712", "20715", "20716", "20717", "20718", "20719", "20720", "20721", "20722", "20725", "20735", "20737", "20740", "20741", "20742", "20743", "20744", "20745", "20746", "20747", "20748", "20750", "20757", "20762", "20769", "20770", "20771", "20781", "20782", "20783", "20784", "20785", "20787", "20788")) |> 
   mutate(perc_change = ifelse(july_2021 != 0, (october_2023 - july_2021) / july_2021 * 100, NA)) |> 
@@ -184,6 +189,7 @@ filter(zip %in% c ("20772", "20607", "20608", "20613", "20623", "20703", "20704"
   arrange(desc(perc_change))
 
 perc_change_pg_foreclosures
+write_csv(perc_change_pg_foreclosures, "perc_change_pg_foreclosures.csv")
 ```
 
 #Q3
@@ -335,6 +341,10 @@ write_csv(pg_unemployment_notices, "pg_unemployment_notices.csv")
 
 
 ```
+
+# We charted this as well. The foreclosure notice numbers were too big to compare on the same chart as the unemployment rates, unfortunately, so we had to put them in separate charts. (We thought of comparing the month-over-month percent change of foreclosure sums but couldn't figure out the code for it in the time that we had).
+Prince George's County NOI totals: https://datawrapper.dwcdn.net/gh9wi/1/
+Prince George's Unemployment rates: https://datawrapper.dwcdn.net/nqCrK/1/
 
 ```{r}
 perc_change_pg_unemployment_notices <- pg_unemployment_notices |>
