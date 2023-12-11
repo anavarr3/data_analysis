@@ -271,6 +271,15 @@ cor.test(foreclosure_pop_income$income, foreclosure_pop_income$foreclosures_sum,
 ```
 
 ```{r}
+per_capita <- foreclosure_pop_income |> 
+  mutate(percapita = (foreclosures_sum/population)*10000) |> 
+  arrange(desc(percapita))
+
+per_capita
+```
+
+
+```{r}
 #Okay, now to plot the median income and the number of intent to foreclose notices by zip code.
 
 ggplot(per_capita, aes(x=income, y=percapita)) +
