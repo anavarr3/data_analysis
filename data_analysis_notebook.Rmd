@@ -227,24 +227,13 @@ foreclosure_pop_income
 ```
 
 ```{r}
-#Now we are making a dataframe that includes a per_capita column.
-per_capita <- foreclosure_pop_income |> 
-  mutate(percapita = (foreclosures_sum/population)*10000) |> 
-  arrange(desc(percapita))
-
-per_capita
-
-write_csv(per_capita, "per_capita.csv")
-```
-
-```{r}
 #We wanted to first plot out the sum of intent to foreclose notices by zip code.
 ggplot(per_capita, aes(x=income, y=foreclosures_sum)) +
   geom_point()+
   labs(
-    title="Test",
+    title="Zip codes with higher median incomes had less variety in NOI totals",
     x = "Median Income",
-    y = "foreclosure sum",
+    y = "Sum of NOI",
     caption = "source: Source: Office of Financial Regulation") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     geom_text(check_overlap = TRUE, size = 2, aes(label = zip), hjust = 0.5, vjust = -0.5)
@@ -255,9 +244,9 @@ ggplot(per_capita, aes(x=income, y=foreclosures_sum)) +
 
 ggplot(per_capita, aes(x = income)) +
   geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
-  labs(title = "distribution of median income",
-       x = "median income",
-       y = "frequency")
+  labs(title = "Distribution of median income",
+       x = "Median Income",
+       y = "Frequency")
 ```
 
 ```{r}
@@ -265,7 +254,10 @@ ggplot(per_capita, aes(x = income)) +
 per_capita |>
   ggplot() +
   geom_point(aes(x=income,y=foreclosures_sum)) +
-  geom_smooth(aes(x=income,y=foreclosures_sum), method="lm")
+  geom_smooth(aes(x=income,y=foreclosures_sum), method="lm")+
+   labs(title = "Relationship between median income and sum of NOIs",
+       x = "Median Income",
+       y = "Sum of NOIs")
 ```
 
 ```{r}
@@ -280,9 +272,9 @@ cor.test(per_capita$income, per_capita$foreclosures_sum, method = "kendall")
 ggplot(per_capita, aes(x=income, y=percapita)) +
   geom_point()+
   labs(
-    title="Test",
-    x = "income",
-    y = "foreclosures per capita",
+    title="A weak relationship exists between NOIs per capita and median income",
+    x = "Median Income",
+    y = "NOIs Per Capita",
     caption = "source: Source: Office of Financial Regulation") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     geom_text(check_overlap = TRUE, size = 2, aes(label = zip), hjust = 0.5, vjust = -0.5)
@@ -292,7 +284,12 @@ ggplot(per_capita, aes(x=income, y=percapita)) +
 per_capita |>
   ggplot() +
   geom_point(aes(x=income,y=percapita)) +
-  geom_smooth(aes(x=income,y=percapita), method="lm")
+  geom_smooth(aes(x=income,y=percapita), method="lm")+
+  labs(
+    title="A weak relationship exists between NOIs per capita and median income",
+    x = "Median Income",
+    y = "NOIs Per Capita",
+    caption = "source: Source: Office of Financial Regulation")
 ```
 
 ```{r}
