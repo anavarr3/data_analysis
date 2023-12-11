@@ -226,8 +226,11 @@ md_income <- md_income |>
 md_income
 
 foreclosure_pop_income <- left_join(foreclosure_state_pop, md_income, join_by(zip)) |> 
-  select(zip, foreclosures_sum, population, moe_pop, income, moe_inc)
-foreclosure_pop_income 
+  select(zip, foreclosures_sum, population, moe_pop, income, moe_inc) |>
+  arrange(desc(income))
+foreclosure_pop_income
+
+# 21056 highest income, 21737 highest income, 21160 closest to $100,000, 21523 closest to $15,000, 21542 lowest income, 20772 largest notices, 
 ```
 
 ```{r}
@@ -390,7 +393,7 @@ foreclosures_sum_date <- col_sum |>
 
 foreclosures_sum_date
 
-names(foreclosures_sum_date) <- str_replace(names(foreclosures_2022_date), "x", "")
+names(foreclosures_sum_date) <- str_replace(names(foreclosures_sum_date), "x", "")
 foreclosures_sum_date
 ```
 
@@ -398,8 +401,7 @@ foreclosures_sum_date
 ```{r}
 #Here we are selecting only the 2022 months
 foreclosure_notices_2022 <- foreclosures_sum_date |> 
-  mutate(year = (year(date)),
-         full_date=floor_date(date, "month")) |> 
+  mutate(year = (year(date))) |> 
   filter(year == "2022") |> 
   select(!year)
 
@@ -412,7 +414,6 @@ foreclosure_notices_2022
 foreclosure_notices_2022 |> 
   ggplot() + 
   geom_line(aes(x= date, y=sum_col)) +
-  scale_x_continuous(breaks = 1:52) +
  labs(
     title="Intent to foreclose notices in Maryland across 2022",
     x = "month",
