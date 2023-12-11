@@ -370,10 +370,6 @@ Q5. What are the differences in foreclosure notices by season (warm months vs co
 
 
 
-
-
-
-
 #Can throw away if we can figure out how to add a sum column above
 ```{r}
 col_sum <- transposed_redo_arranged |> 
@@ -387,22 +383,23 @@ sum_arranged <- col_sum[, c(ncol(transposed_redo_2), 1:(ncol(col_sum)-1))]
 sum_arranged
 ```
 ```{r}
-foreclosures_2022_date <- sum_arranged |> 
+foreclosures_sum_date <- col_sum |> 
   clean_names() |> 
   mutate(date = foreclosures_zip_all$date) |> 
   select(date, everything())
 
-foreclosures_2022_date
+foreclosures_sum_date
 
-names(foreclosures_2022_date) <- str_replace(names(foreclosures_2022_date), "x", "")
-foreclosures_2022_date
+names(foreclosures_sum_date) <- str_replace(names(foreclosures_2022_date), "x", "")
+foreclosures_sum_date
 ```
 
 
 ```{r}
 #Here we are selecting only the 2022 months
-foreclosure_notices_2022 <- transposed_redo_2 |> 
-  mutate(year = (year(date))) |> 
+foreclosure_notices_2022 <- foreclosures_sum_date |> 
+  mutate(year = (year(date)),
+         full_date=floor_date(date, "month")) |> 
   filter(year == "2022") |> 
   select(!year)
 
@@ -410,34 +407,11 @@ foreclosure_notices_2022
 ```
 
 ```{r}
-# Now for the adding
-final_foreclosures_2022 <- foreclosure_notices_2022[, c(ncol(foreclosure_notices_2022), 1:(ncol(foreclosure_notices_2022)-1))] |> 
-  arrange(date)
-
-final_foreclosures_2022
-```
-
-```{r}
-col_sum_2022_months <- final_foreclosures_2022 |> 
-  mutate(sum_of_notices = rowSums(final_foreclosures_2022[,-1]))
-
-foreclosures_by_month_2022 <- col_sum_2022_months[, c(ncol(transposed_foreclosures_2022), 1:(ncol(col_sum_2022_months)-1))] |>
-  select(date, sum_of_notices)
-
-foreclosures_by_month_2022
-```
-
-```{r}
-#Checking for the same number on the first row
-rowSums(foreclosures_by_month_2022[1,-1])
-```
-
-```{r}
 # Time to chart. I'm having trouble getting the ticks and month labels for this, and Chat GPT said it's because of the data type of the month_year column. We need to change that column to a date type using the first day of every month.
 
-foreclosures_by_month_2022 |> 
+foreclosure_notices_2022 |> 
   ggplot() + 
-  geom_line(aes(x= month_year, y=sum_of_notices)) +
+  geom_line(aes(x= full_date, y=sum_col)) +
   scale_x_continuous(breaks = 1:52) +
  labs(
     title="Intent to foreclose notices in Maryland across 2022",
