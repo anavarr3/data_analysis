@@ -78,10 +78,8 @@ transposed_redo_2 <- foreclosures |>
   mutate(
     date= mdy(date),
     date=floor_date(date, "month")
-    #month_year = format(date, "%B_%Y")
     ) |>
   arrange(date)
-  #select(month_name, everything())
 transposed_redo_2
 
 #Now we're just cleaning a few things up. This dataframe is specific to the zip code 20772 for each month of the year from July 2021 to October 2023, so we just renamed the 20772 column "foreclosures" and kept the date and foreclosures columns before arranging by date. Because the date column is a character rather than an actual date, it's arranged in alphabetical order. We can work with that for now and separate them if we join later. 
@@ -234,7 +232,7 @@ foreclosure_pop_income
 
 ```{r}
 #We wanted to first plot out the sum of intent to foreclose notices by zip code.
-ggplot(per_capita, aes(x=income, y=foreclosures_sum)) +
+ggplot(foreclosure_pop_income, aes(x=income, y=foreclosures_sum)) +
   geom_point()+
   labs(
     title="Zip codes with higher median incomes had less variety in NOI totals",
@@ -248,7 +246,7 @@ ggplot(per_capita, aes(x=income, y=foreclosures_sum)) +
 ```{r}
 #How spread out is our data? It looks like the zip codes lean under 150,000, which is why we decided to use the Kendall method for the correlation test. 
 
-ggplot(per_capita, aes(x = income)) +
+ggplot(foreclosure_pop_income, aes(x = income)) +
   geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
   labs(title = "Distribution of median income",
        x = "Median Income",
@@ -257,7 +255,7 @@ ggplot(per_capita, aes(x = income)) +
 
 ```{r}
 #Here we are charting the relationship between a zip code's median income and the number of intent to foreclose notices.
-per_capita |>
+foreclosure_pop_income |>
   ggplot() +
   geom_point(aes(x=income,y=foreclosures_sum)) +
   geom_smooth(aes(x=income,y=foreclosures_sum), method="lm")+
@@ -268,7 +266,7 @@ per_capita |>
 
 ```{r}
 # The Kendall Method shows that there isn't a strong relationship between these two.
-cor.test(per_capita$income, per_capita$foreclosures_sum, method = "kendall")
+cor.test(foreclosure_pop_income$income, foreclosure_pop_income$foreclosures_sum, method = "kendall")
 
 ```
 
@@ -307,7 +305,7 @@ cor.test(per_capita$income, per_capita$percapita, method = "kendall")
 
 Q4. How do the unemployment rates across PG County compare to the intent to foreclose notices for each month? 
 
-#Findings: It seems like there is no relationship. As unemployment rates decrease following July 2021,intent to foreclose notices continue to rise. 
+#Findings: It seems like there is no relationship. As unemployment rates decrease following July 2021, intent to foreclose notices continue to rise. 
 
 # New Join Data
 
@@ -361,21 +359,6 @@ Q5. What are the differences in foreclosure notices by season (warm months vs co
 
 
 ```{r}
-transposed_redo_2 <- foreclosures |>
-  gather(date, value, -1) |>
-  spread(key = zip, value = value) |>
-  mutate(
-    date= mdy(date),
-    date=floor_date(date, "month")
-    #month_year = format(date, "%B_%Y")
-    ) |>
-  arrange(date)
-  #select(month_name, everything())
-transposed_redo_2
-```
-
-
-```{r}
 #Here we are selecting only the 2022 months
 foreclosure_notices_2022 <- transposed_redo_2 |> 
   mutate(year = (year(date))) |> 
@@ -388,25 +371,15 @@ foreclosure_notices_2022
 
 ```{r}
 col_sum <- transposed_redo_arranged |> 
-  mutate(sum_col = rowSums(transposed_redo_arranged[,-1]))
-
+  mutate(sum_col = rowSums(transposed_redo_arranged[,-1])) |>
+  select(sum_col, everything())
+col_sum
 #This next line creates a new dataframe, where we take our fresh one ^ and ask it to pull the new column from the end (sum_col) and place it at the front.
 
 sum_arranged <- col_sum[, c(ncol(transposed_redo_2), 1:(ncol(col_sum)-1))]
 
 sum_arranged
 ```
-
-#This next line creates a new dataframe, where we take our fresh one ^ and ask it to pull the new column from the end (sum_col) and place it at the front.
-
-sum_arranged <- col_sum[, c(ncol(transposed_redo_2), 1:(ncol(col_sum)-1))]
-
-sum_arranged
-
-
-
-
-
 
 ```{r}
 # Now for the adding
@@ -415,10 +388,6 @@ final_foreclosures_2022 <- foreclosure_notices_2022[, c(ncol(foreclosure_notices
 
 final_foreclosures_2022
 ```
-
-
-
-
 
 ```{r}
 col_sum_2022_months <- final_foreclosures_2022 |> 
