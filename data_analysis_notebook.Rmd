@@ -393,6 +393,9 @@ foreclosures_2022_date <- sum_arranged |>
   select(date, everything())
 
 foreclosures_2022_date
+
+names(foreclosures_2022_date) <- str_replace(names(foreclosures_2022_date), "x", "")
+foreclosures_2022_date
 ```
 
 
