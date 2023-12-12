@@ -5,7 +5,26 @@ date: "2023-11-10"
 data: https://opendata.maryland.gov/Housing/Maryland-Notices-of-Intent-to-Foreclose-by-Zip-Cod/ftsr-vapt
 
 ---
-# Strongest story idea: Right now we believe the strongest story could lie in the income levels overlapping with the intent to foreclose notices or the unemployment overlap with the PG County zip codes. We did a lot of the joining work this milestone, so we don't have a complete idea yet. I'm also interested in Q5 and why there was a spike of notices around the springtime before dropping back down. We think the income levels overlapping with the intent to foreclose notices could be newsworthy if it turns out that income levels are trending downward with intent to foreclose notices trend up, and by how much. Or, is it the opposite and can people, while they have a decent income, just not afford rent/mortgages?
+#Memo details: "Be sure to describe your most important and newsworthy findings to me as if you were pitching a story about them, including some discussion of what your reporting plans would entail - what would you need/want to do to make this a better story?"
+
+# Strongest story idea: One of our most important news findings was that following the end of the foreclosure moratorium in Maryland due to the pandemic, the highest percent changes of intent to foreclose notices were mostly concentrated around southern and northeastern Maryland, including Baltimore to some extent. Plus, in less than three years, NOIs have jumped back to pre-pandemic levels. In 2022 alone, the percent change in total NOIs was nearly 75%. We would need more detailed pre-pandemic data to compare, however, which we would need to request via MPIA, to see what zip codes returned to pre-pandemic levels sooner than others.
+
+#When we imported Census data, we found that there was a weak relationship between a zip code’s median income and the number of NOIs per capita. The higher the median income, the fewer NOIs per capita the zip code was likely to have. However, the zip codes with lower median incomes were more likely to have a wider variety in the number of NOIs per capita than those with higher median incomes.
+
+#The next step in reporting this story would be getting  data from before the start of the moratorium and through it in case there were some notices that slipped through. This way we can look at if the percent change within the same amount of time is normal. We would also want the data of how many of these NOI became actual foreclosures by zip code, which wasn't readily available. With this data, we would explore more of the demographics of these zip codes with a focus on the ones with the more notable percent changes.
+
+#We would look at what percentage of NOI turned into actual foreclosures and plot it on a map to compare zip codes. We would also look at the population and median income of these zip codes again to start off. It would also be interesting to look at the age distribution in each zip code as well as race/ethnicity. 
+
+#Some of the zip codes we would keep an eye on is 70772, which had the highest number of NOI overall and hit the highest number of NOI in August 2023 at 154 notices. We would also keep an eye on 21056 (highest income), 20874 (close to $100,000), 20721 (close to $15,000) and 21542 (lowest income).
+
+#From this list, we would try to obtain the records of the actual foreclosures and see if we can contact the old owners and ask about their experience. What are the more common reasons as to why they lost their homes, and does it match up with what the data tells us? Did the moratorium end too soon for them? 
+
+#Another interesting point were the overall spikes in intent to foreclose notices in April, August and December 2022. What happened here? That would be a question for the Office of Financial Regulation, most likely. Does this happen every year? The data on the website only goes back to Nov. 2019, so it’s difficult to see what had occurred pre-pandemic. What did surprise us was that there were substantial troughs throughout the year. We expected a steady rise, but February and May showed some of the lower totals.
+
+#The consons of our data include that it was organized in an odd way with the dates, so we had to go through the process of transposing it for some questions. It's also aggregated, which made it difficult to find a dataset to join to properly. Also, it only has one full year. The other two years included are only partial years. As for pros, it was interesting data to look at and once we got a feel for it, we were able to tell pretty easily what we could and couldn't do.
+
+#There were a few times we had to check our analysis. We had to write a code to double check the sum of the total number of NOIs by date and double check the variable we pulled from the Census since the median income looked off at first. 
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -96,18 +115,24 @@ write_csv(top_foreclosure_zip, "top_foreclosure_zip.csv")
 ```{r}
 #Here we decided to compare the 20772 zip code to a few others based on where they fell with median income levels and foreclosure numbers (see datawrapper chart for details).
 foreclosures_zip <- transposed_redo_2 |>
-select(date, "20772", "20878", "21122", "20640", "20895", "21206")  |>
+select(date, "20772", "21056", "20874", "20721", "21542")  |>
 arrange(date)
 foreclosures_zip
 
 write_csv(foreclosures_zip, "foreclosures_zip.csv")
+
+#21056 highest income
+#20874 close to $100,000 
+#20721 close to $15,000 
+#21542 lowest income
+#20772 largest notices
 ```
 
 
 ```{r}
 # Time to chart it! 
 
-#datawrapper: https://datawrapper.dwcdn.net/g8fID/1/
+#datawrapper: https://datawrapper.dwcdn.net/vVXFh/1/
 
 top_foreclosure_zip |> 
    ggplot() + 
@@ -125,6 +150,8 @@ theme(
 
 
 ```{r}
+#Arranging by date/renaming to make it more clear
+
 foreclosures_zip_all <- transposed_redo_2 |>
 arrange(date)
 
@@ -134,7 +161,7 @@ write_csv(foreclosures_zip_all, "foreclosures_zip_all.csv")
 ```
 
 ```{r}
-# I want to compare the above chart to the overall pattern. Here I am just readjusting the transposed_redo data set so I can see the month_year column at the front and get rid of the original date column
+# I want to make a dataframe that has the total number of notices by month/year combo. Here I am just readjusting the transposed_redo data set so I can see the month_year column at the front and get rid of the original date column
 
 transposed_redo_arranged <- transposed_redo_2 |> 
 #[, c(ncol(transposed_redo_2), 1:(ncol(transposed_redo_2)-1))] |> 
@@ -231,7 +258,7 @@ foreclosure_pop_income <- left_join(foreclosure_state_pop, md_income, join_by(zi
   arrange(desc(income))
 foreclosure_pop_income
 
-# 21056 highest income, 21737 highest income, 21160 closest to $100,000, 21523 closest to $15,000, 21542 lowest income, 20772 largest notices, 
+
 ```
 
 ```{r}
@@ -242,10 +269,11 @@ ggplot(foreclosure_pop_income, aes(x=income, y=foreclosures_sum)) +
     title="Zip codes with higher median incomes had less variety in NOI totals",
     x = "Median Income",
     y = "Sum of NOI",
-    caption = "source: Source: Office of Financial Regulation") +
+    caption = "Source: Office of Financial Regulation") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     geom_text(check_overlap = TRUE, size = 2, aes(label = zip), hjust = 0.5, vjust = -0.5)
 ```
+
 
 ```{r}
 #How spread out is our data? It looks like the zip codes lean under 150,000, which is why we decided to use the Kendall method for the correlation test. 
@@ -358,6 +386,7 @@ Prince George's County NOI totals: https://datawrapper.dwcdn.net/gh9wi/1/
 Prince George's Unemployment rates: https://datawrapper.dwcdn.net/nqCrK/1/
 
 ```{r}
+#Here we are finding the p
 perc_change_pg_unemployment_notices <- pg_unemployment_notices |>
  arrange(date)
 
@@ -371,6 +400,7 @@ Q5. What are the differences in foreclosure notices by season (warm months vs co
 
 
 ```{r}
+#Bringing this back down so we can see the code.
 col_sum <- transposed_redo_arranged |> 
   mutate(sum_col = rowSums(transposed_redo_arranged[,-1])) |>
   select(sum_col, everything())
@@ -382,6 +412,7 @@ sum_arranged <- col_sum[, c(ncol(transposed_redo_2), 1:(ncol(col_sum)-1))]
 sum_arranged
 ```
 ```{r}
+#Taking the col_sum code and adding the date column from foreclosures_zip_all
 foreclosures_sum_date <- col_sum |> 
   clean_names() |> 
   mutate(date = foreclosures_zip_all$date) |> 
@@ -422,6 +453,8 @@ theme(
 ```
 
 ```{r}
+#I want to make a bar chart to see how it compares. Here we can see the peaks in August, December and April once more.
+
 foreclosure_notices_2022 |> 
 ggplot() +
   geom_bar(aes(x=date, weight=sum_col), fill="lightblue", color="lightblue") +
