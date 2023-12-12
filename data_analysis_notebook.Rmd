@@ -365,15 +365,10 @@ perc_change_pg_unemployment_notices
 ```
 
 Q5. What are the differences in foreclosure notices by season (warm months vs cold months)? The only full year we have is 2022, so let's look at that year to start.
-**We're concerned about our ability to filter by month since the dates are in the column position.**
 
-#Findings so far: Again, having trouble getting the months to show up at the bottom of the chart, but we found there is an incline over the span of the year -- meaning there were more notices in the colder months. However, there was a pretty big spike in the spring (it looks like the spring) before the notices dropped again. I would be interested in finding out more about that.
-
+#From the chart we created, we can see there were dramatic spikes in NOI notices in April, August and December. The year as a whole saw a percent change of 73%. At a quick glance from annual state data, January 2019 saw a similar rise from November up until January 2020. We would love to get the data going farther back to see if this trend continues (we didn't pull this data for other questions because it isn't broken up by zip codes. However, it might be possible to request that info via MPIA.
 
 
-
-
-#Can throw away if we can figure out how to add a sum column above
 ```{r}
 col_sum <- transposed_redo_arranged |> 
   mutate(sum_col = rowSums(transposed_redo_arranged[,-1])) |>
@@ -409,17 +404,24 @@ foreclosure_notices_2022
 ```
 
 ```{r}
-# Time to chart. I'm having trouble getting the ticks and month labels for this, and Chat GPT said it's because of the data type of the month_year column. We need to change that column to a date type using the first day of every month.
+# Time to chart. We had to consult Chat GPT on making sure the x-axis shows all the months involved and in combining the dataframes above. https://chat.openai.com/c/49571382-6e25-4419-acd4-11f967423976
 
 foreclosure_notices_2022 |> 
   ggplot() + 
   geom_line(aes(x= date, y=sum_col)) +
  labs(
-    title="Intent to foreclose notices in Maryland across 2022",
+    title="Intent to foreclose notices across Maryland in 2022",
     x = "month",
     y = "intent to foreclose notices issued",
     caption = "Source: Office of Financial Regulation") +
 theme(
-    axis.text.x = element_text(angle = 45,  hjust=1)) 
+    axis.text.x = element_text(angle = 45,  hjust=1)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b %Y")
 
 ```
+
+
+
+
+
+
