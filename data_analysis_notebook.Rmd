@@ -118,8 +118,9 @@ top_foreclosure_zip |>
     y = "foreclosures notices issued",
     caption = "Source: Office of Financial Regulation") +
 theme(
-    axis.text.x = element_text(angle = 45,  hjust=1)) 
- #  geom_text(check_overlap = TRUE, size = 2, aes(label = date), hjust = 0.5, vjust = -0.5)
+    axis.text.x = element_text(angle = 45,  hjust=1)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b %Y")
+
 ```
 
 
@@ -366,7 +367,7 @@ perc_change_pg_unemployment_notices
 
 Q5. What are the differences in foreclosure notices by season (warm months vs cold months)? The only full year we have is 2022, so let's look at that year to start.
 
-#From the chart we created, we can see there were dramatic spikes in NOI notices in April, August and December. The year as a whole saw a percent change of 73%. At a quick glance from annual state data, January 2019 saw a similar rise from November up until January 2020. We would love to get the data going farther back to see if this trend continues (we didn't pull this data for other questions because it isn't broken up by zip codes. However, it might be possible to request that info via MPIA.
+#From the chart we created, we can see there were dramatic spikes in NOI notices in April, August and December. The year as a whole saw a percent change of 73%. At a quick glance from annual state data, January 2019 saw a similar rise from November up until January 2020. We would love to get the data going farther back to see if this trend continues (we didn't pull this data for other questions because it isn't broken up by zip codes. However, it might be possible to request that info via MPIA. This question morphed a little from "do colder months have more notices than warmer months?" to "What did the progression of foreclosures look like over the course of 2022? for Maryland as a whole?" It looks like there was some ebb in NOI totals during the summer until August hit though. And then numbers were relatively low at the start of the year.
 
 
 ```{r}
@@ -420,8 +421,20 @@ theme(
 
 ```
 
+```{r}
+foreclosure_notices_2022 |> 
+ggplot() +
+  geom_bar(aes(x=date, weight=sum_col), fill="lightblue", color="lightblue") +
+  coord_flip() + 
+  theme(
+    plot.title = element_text(margin = margin(b = 5))
+  ) +
+  labs(
+    title = "Intent to foreclose notices across Maryland in 2022",
+    x = "Date",
+    y = "Intent to foreclose notices issued",
+    caption = "source: Office of Financial Regulation")
+```
 
-
-
-
+ 
 
